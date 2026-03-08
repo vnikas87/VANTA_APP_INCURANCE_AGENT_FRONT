@@ -1,0 +1,18 @@
+export const API_ROLES = {
+  ADMINISTRATOR: 'ADMINISTRATOR',
+  ADMIN: 'ADMIN',
+  EDITOR: 'EDITOR',
+  VIEWER: 'VIEWER',
+} as const;
+
+export const NAV_ROLES = [
+  'ADMIN',
+  'NAV_ADMIN',
+  'NAV_ADMINISTRATOR',
+  'NAV_MANAGEMENT',
+  'OPS_MANAGEMENT',
+  'ADMIN_MANAGEMENT',
+  'OPS_USER',
+  'ADMIN_USER',
+  'EXT_USER',
+] as const;

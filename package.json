@@ -1,0 +1,42 @@
+{
+  "name": "keycloak-react-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
+    "axios": "^1.13.6",
+    "bootstrap": "^5.3.8",
+    "keycloak-js": "^26.2.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.13.1",
+    "react-toastify": "^11.0.5",
+    "reactstrap": "^9.2.3",
+    "remixicon": "^4.9.1",
+    "sweetalert2": "^11.26.21"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/keycloak-js": "^2.5.4",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.48.0",
+    "vite": "^7.3.1"
+  }
+}
