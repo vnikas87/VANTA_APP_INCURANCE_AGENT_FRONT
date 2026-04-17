@@ -4,6 +4,8 @@ import type { ReactElement } from 'react';
 import { logoutAllTabs } from '../auth/keycloak';
 import { tStatic } from '../i18n';
 import { useAppSelector } from '../store/hooks';
+import { hasAnyRole } from '../auth/keycloak';
+import { API_ROLES } from '../config/roles';
 
 type RequireNavPathProps = {
   children: ReactElement;
@@ -21,6 +23,14 @@ function hasPathAccess(allowedPaths: string[], requiredPath: string): boolean {
 }
 
 function RequireNavPath({ children, requiredPath }: RequireNavPathProps) {
+  // Role-only mode:
+  // Access decisions are based on authenticated role gates
+  // (ADMINISTRATOR / OPS_USER), not per-path menu rules.
+  // Keep this component to preserve route structure.
+  if (hasAnyRole([API_ROLES.ADMINISTRATOR, API_ROLES.OPS_USER])) {
+    return children;
+  }
+
   const menu = useAppSelector((state) => state.navigation.menu);
   const menuLoaded = useAppSelector((state) => state.navigation.menuLoaded);
   const loading = useAppSelector((state) => state.navigation.loading);
