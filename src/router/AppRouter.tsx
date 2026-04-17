@@ -27,10 +27,7 @@ function AppRouter() {
             <ProtectedRoute
               allowedRoles={[
                 API_ROLES.ADMINISTRATOR,
-                API_ROLES.ADMIN,
-                API_ROLES.EDITOR,
-                API_ROLES.VIEWER,
-                API_ROLES.OPS,
+                API_ROLES.OPS_USER,
               ]}
             />
           }
@@ -153,7 +150,7 @@ function AppRouter() {
               }
             />
 
-            <Route element={<ProtectedRoute allowedRoles={[API_ROLES.ADMINISTRATOR, API_ROLES.ADMIN]} />}>
+            <Route element={<ProtectedRoute allowedRoles={[API_ROLES.ADMINISTRATOR]} />}>
               <Route
                 path="/settings/access-control/users"
                 element={

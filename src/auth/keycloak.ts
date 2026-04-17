@@ -67,9 +67,14 @@ export function getUserRoles(): string[] {
   }
 
   // Backward-compatible aliasing:
-  // If user has OPS nav-style roles, treat as OPS in frontend route guards.
+  // Some realms assign OPS, others assign OPS_USER / OPS_MANAGEMENT.
+  // Keep both aliases for stable frontend access checks.
+  if (roleSet.has('OPS')) {
+    roleSet.add('OPS_USER');
+  }
   if (roleSet.has('OPS_USER') || roleSet.has('OPS_MANAGEMENT')) {
     roleSet.add('OPS');
+    roleSet.add('OPS_USER');
   }
 
   return Array.from(roleSet);
