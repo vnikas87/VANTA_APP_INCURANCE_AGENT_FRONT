@@ -3,6 +3,7 @@ export const API_ROLES = {
   ADMIN: 'ADMIN',
   EDITOR: 'EDITOR',
   VIEWER: 'VIEWER',
+  OPS: 'OPS',
 } as const;
 
 export const NAV_ROLES = [

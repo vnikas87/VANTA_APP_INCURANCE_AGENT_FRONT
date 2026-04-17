@@ -25,7 +25,13 @@ function AppRouter() {
         <Route
           element={
             <ProtectedRoute
-              allowedRoles={[API_ROLES.ADMINISTRATOR, API_ROLES.ADMIN, API_ROLES.EDITOR, API_ROLES.VIEWER]}
+              allowedRoles={[
+                API_ROLES.ADMINISTRATOR,
+                API_ROLES.ADMIN,
+                API_ROLES.EDITOR,
+                API_ROLES.VIEWER,
+                API_ROLES.OPS,
+              ]}
             />
           }
         >

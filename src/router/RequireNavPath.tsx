@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import type { ReactElement } from 'react';
-import { Navigate } from 'react-router-dom';
+import { logoutAllTabs } from '../auth/keycloak';
 import { tStatic } from '../i18n';
 import { useAppSelector } from '../store/hooks';
 
@@ -40,19 +40,22 @@ function RequireNavPath({ children, requiredPath }: RequireNavPathProps) {
     if (handledRef.current) return;
 
     handledRef.current = true;
-    void Swal.fire({
-      icon: 'warning',
-      title: tStatic('route.no_access'),
-      text: tStatic('route.no_permission'),
-      timer: 2000,
-      showConfirmButton: false,
-    });
+    void (async () => {
+      await Swal.fire({
+        icon: 'warning',
+        title: tStatic('route.no_access'),
+        text: tStatic('route.no_permission'),
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      await logoutAllTabs();
+    })();
   }, [hasAccess, loading, menuLoaded]);
 
   if (!menuLoaded || loading) return null;
 
   if (!hasAccess) {
-    return <Navigate to="/" replace />;
+    return null;
   }
 
   return children;

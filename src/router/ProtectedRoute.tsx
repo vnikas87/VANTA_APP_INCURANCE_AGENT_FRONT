@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
-import { Navigate, Outlet } from 'react-router-dom';
-import { hasAnyRole } from '../auth/keycloak';
+import { Outlet } from 'react-router-dom';
+import { hasAnyRole, logoutAllTabs } from '../auth/keycloak';
 import { tStatic } from '../i18n';
 
 type ProtectedRouteProps = {
@@ -16,17 +16,20 @@ function ProtectedRoute({ allowedRoles = [] }: ProtectedRouteProps) {
     if (hasAnyRole(allowedRoles)) return;
     handledRef.current = true;
 
-    void Swal.fire({
-      icon: 'warning',
-      title: tStatic('route.no_access'),
-      text: tStatic('route.no_permission'),
-      timer: 2000,
-      showConfirmButton: false,
-    });
+    void (async () => {
+      await Swal.fire({
+        icon: 'warning',
+        title: tStatic('route.no_access'),
+        text: tStatic('route.no_permission'),
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      await logoutAllTabs();
+    })();
   }, [allowedRoles]);
 
   if (!hasAnyRole(allowedRoles)) {
-    return <Navigate to="/" replace />;
+    return null;
   }
 
   return <Outlet />;
