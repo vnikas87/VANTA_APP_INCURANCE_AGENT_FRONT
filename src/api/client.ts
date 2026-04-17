@@ -79,17 +79,33 @@ api.interceptors.response.use(
       !handlingPermissionLogout
     ) {
       handlingPermissionLogout = true;
+      let timerInterval: ReturnType<typeof setInterval> | undefined;
       await Swal.fire({
         icon: 'error',
         title: tStatic('api.permission_blocked'),
-        html: `<div>${tStatic('api.permission_denied')}</div><div style="margin-top:6px;font-size:12px;opacity:0.9;">${tStatic('api.click_ok_logout')}</div>`,
+        html: `<div>${tStatic('api.permission_denied')}</div><div style="margin-top:8px;font-size:12px;opacity:0.9;">${tStatic('api.logout_in')} <strong id="permission-logout-seconds">30</strong>s</div><div style="margin-top:6px;font-size:12px;opacity:0.9;">${tStatic('api.click_ok_logout')}</div>`,
         background: '#07173f',
         color: '#e9eefc',
         backdrop: '#07173f',
         showConfirmButton: true,
         confirmButtonText: 'OK',
+        timer: 30000,
+        timerProgressBar: true,
         allowOutsideClick: false,
         allowEscapeKey: false,
+        didOpen: () => {
+          const secondsNode = Swal.getHtmlContainer()?.querySelector('#permission-logout-seconds');
+          timerInterval = setInterval(() => {
+            const leftMs = Swal.getTimerLeft() ?? 0;
+            const leftSeconds = Math.max(0, Math.ceil(leftMs / 1000));
+            if (secondsNode) {
+              secondsNode.textContent = String(leftSeconds);
+            }
+          }, 250);
+        },
+        willClose: () => {
+          if (timerInterval) clearInterval(timerInterval);
+        },
       });
       await logoutAllTabs();
       handlingPermissionLogout = false;

@@ -41,12 +41,30 @@ function RequireNavPath({ children, requiredPath }: RequireNavPathProps) {
 
     handledRef.current = true;
     void (async () => {
+      let timerInterval: ReturnType<typeof setInterval> | undefined;
       await Swal.fire({
         icon: 'warning',
         title: tStatic('route.no_access'),
-        text: tStatic('route.no_permission'),
-        timer: 2000,
-        showConfirmButton: false,
+        html: `<div>${tStatic('route.no_permission')}</div><div style="margin-top:8px;font-size:12px;opacity:0.9;">${tStatic('api.logout_in')} <strong id="nav-logout-seconds">30</strong>s</div><div style="margin-top:6px;font-size:12px;opacity:0.9;">${tStatic('api.click_ok_logout')}</div>`,
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
+        timer: 30000,
+        timerProgressBar: true,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          const secondsNode = Swal.getHtmlContainer()?.querySelector('#nav-logout-seconds');
+          timerInterval = setInterval(() => {
+            const leftMs = Swal.getTimerLeft() ?? 0;
+            const leftSeconds = Math.max(0, Math.ceil(leftMs / 1000));
+            if (secondsNode) {
+              secondsNode.textContent = String(leftSeconds);
+            }
+          }, 250);
+        },
+        willClose: () => {
+          if (timerInterval) clearInterval(timerInterval);
+        },
       });
       await logoutAllTabs();
     })();
