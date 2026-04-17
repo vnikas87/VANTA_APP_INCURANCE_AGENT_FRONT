@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Badge, Button, Card, CardBody, Col, Form, Input, Label, Row } from 'reactstrap';
+import { useI18n } from '../../i18n';
 import { sweetAlert, toastError } from '../../utils/alerts';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchUsers } from '../../store/slices/usersSlice';
@@ -12,6 +13,7 @@ import {
 } from '../../store/slices/licenseSlice';
 
 function LicenseManagementPage() {
+  const { t } = useI18n();
   const dispatch = useAppDispatch();
   const data = useAppSelector((state) => state.license.data);
   const loading = useAppSelector((state) => state.license.loading);
@@ -66,37 +68,37 @@ function LicenseManagementPage() {
       <Col lg="4">
         <Card className="panel-card">
           <CardBody>
-            <h6 className="mb-2">License Summary</h6>
+            <h6 className="mb-2">{t('license.title')}</h6>
             {!data ? (
-              <div className="text-muted fs-12">Loading...</div>
+              <div className="text-muted fs-12">{t('app.loading')}</div>
             ) : (
               <div className="fs-12 d-flex flex-column gap-1">
                 <div>
-                  Status:{' '}
+                  {t('app.status')}:{' '}
                   <Badge color={data.license.isActive ? 'success' : 'secondary'}>
                     {data.license.isActive ? 'ACTIVE' : 'INACTIVE'}
                   </Badge>
                 </div>
                 <div>
-                  Seats: <strong>{data.usage.usedUsers}</strong> / <strong>{data.license.maxUsers}</strong>
+                  {t('license.seats')}: <strong>{data.usage.usedUsers}</strong> / <strong>{data.license.maxUsers}</strong>
                 </div>
                 <div>
-                  Available: <strong>{data.usage.availableSeats}</strong>
+                  {t('license.available')}: <strong>{data.usage.availableSeats}</strong>
                 </div>
                 <div>
-                  Tenant: <strong>{data.license.tenantCode ?? '-'}</strong>
+                  {t('license.tenant')}: <strong>{data.license.tenantCode ?? '-'}</strong>
                 </div>
                 <div>
-                  Expires: <strong>{data.license.expiresAt ? new Date(data.license.expiresAt).toLocaleString() : 'No expiry'}</strong>
+                  {t('license.expires')}: <strong>{data.license.expiresAt ? new Date(data.license.expiresAt).toLocaleString() : t('license.no_expiry')}</strong>
                 </div>
                 <div>
-                  Active license token: <strong>{activeGrant?.tokenId ?? data.license.licenseTokenId ?? '-'}</strong>
+                  {t('license.active_token')}: <strong>{activeGrant?.tokenId ?? data.license.licenseTokenId ?? '-'}</strong>
                 </div>
                 <div>
-                  Issued to: <strong>{activeGrant?.issuedTo ?? '-'}</strong>
+                  {t('license.issued_to')}: <strong>{activeGrant?.issuedTo ?? '-'}</strong>
                 </div>
                 <div>
-                  Activated at:{' '}
+                  {t('license.activated_at')}:{' '}
                   <strong>{activeGrant?.activatedAt ? new Date(activeGrant.activatedAt).toLocaleString() : '-'}</strong>
                 </div>
               </div>
@@ -104,16 +106,16 @@ function LicenseManagementPage() {
 
             <hr />
             <Form onSubmit={submitLicenseCode}>
-              <Label className="fs-12">Activate License Code</Label>
+              <Label className="fs-12">{t('license.activate_code')}</Label>
               <Input
                 type="textarea"
                 rows={5}
                 value={licenseCode}
                 onChange={(e) => setLicenseCode(e.target.value)}
-                placeholder="Paste full signed license code"
+                placeholder={t('license.paste_code')}
               />
               <Button className="mt-2" color="primary" type="submit" size="sm" disabled={loading}>
-                Activate
+                {t('license.activate')}
               </Button>
               <Button
                 className="mt-2 ms-2"
@@ -123,7 +125,7 @@ function LicenseManagementPage() {
                 onClick={() => void deactivateLicense()}
                 disabled={loading}
               >
-                Deactivate License
+                {t('license.deactivate')}
               </Button>
               <Button
                 className="mt-2 ms-2"
@@ -133,7 +135,7 @@ function LicenseManagementPage() {
                 onClick={() => void dispatch(fetchLicenseAdminData())}
                 disabled={loading}
               >
-                Refresh
+                {t('license.refresh')}
               </Button>
             </Form>
           </CardBody>
@@ -144,18 +146,18 @@ function LicenseManagementPage() {
         <Card className="panel-card">
           <CardBody>
             <div className="d-flex justify-content-between align-items-center mb-2">
-              <h6 className="m-0">Allocated User Seats</h6>
-              <small className="text-muted">Activate/Deactivate user license seat</small>
+              <h6 className="m-0">{t('license.allocated')}</h6>
+              <small className="text-muted">{t('license.assign_seat')}</small>
             </div>
             <div className="d-flex gap-2 align-items-end mb-3">
               <div style={{ minWidth: 320 }}>
-                <Label className="fs-12">Assign seat to user</Label>
+                <Label className="fs-12">{t('license.assign_seat')}</Label>
                 <Input
                   type="select"
                   value={assignUserId}
                   onChange={(e) => setAssignUserId(e.target.value ? Number(e.target.value) : '')}
                 >
-                  <option value="">Select user</option>
+                  <option value="">{t('license.select_user')}</option>
                   {assignableUsers.map((user) => (
                     <option key={user.id} value={user.id}>
                       #{user.id} {user.name} ({user.email})
@@ -173,7 +175,7 @@ function LicenseManagementPage() {
                 disabled={assignDisabled}
                 onClick={() => void assignSeatToUser()}
               >
-                Assign License Seat
+                {t('license.assign_button')}
               </Button>
               <Button
                 type="button"
@@ -181,14 +183,14 @@ function LicenseManagementPage() {
                 outline
                 onClick={() => void dispatch(fetchUsers())}
               >
-                Refresh Users
+                {t('license.refresh_users')}
               </Button>
               <Badge color="info" className="p-2">
-                Available seats: {data?.usage.availableSeats ?? 0}
+                {t('license.available')}: {data?.usage.availableSeats ?? 0}
               </Badge>
             </div>
             {!data ? (
-              <div className="text-muted fs-12">Loading...</div>
+              <div className="text-muted fs-12">{t('app.loading')}</div>
             ) : (
               <div className="table-responsive">
                 <table className="table table-sm align-middle">
@@ -196,8 +198,8 @@ function LicenseManagementPage() {
                     <tr>
                       <th>User</th>
                       <th>Email</th>
-                      <th>Status</th>
-                      <th className="text-end">Action</th>
+                      <th>{t('app.status')}</th>
+                      <th className="text-end">{t('app.action')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -223,7 +225,7 @@ function LicenseManagementPage() {
                                 void dispatch(setUserLicenseSeat(seat.userId, false, 'Seat deactivated by administrator'))
                               }
                             >
-                              Deactivate
+                              {t('license.deactivate')}
                             </Button>
                           ) : (
                             <Button
@@ -235,7 +237,7 @@ function LicenseManagementPage() {
                                 void dispatch(setUserLicenseSeat(seat.userId, true, 'Seat activated by administrator'))
                               }
                             >
-                              Activate
+                              {t('license.activate')}
                             </Button>
                           )}
                         </td>
@@ -244,7 +246,7 @@ function LicenseManagementPage() {
                     {data.seats.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="text-muted">
-                          No user seats allocated yet.
+                          {t('license.no_seats')}
                         </td>
                       </tr>
                     ) : null}

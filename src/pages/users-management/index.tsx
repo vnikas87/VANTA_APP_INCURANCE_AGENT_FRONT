@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, CardBody, Col, Form, Input, Label, Row, Spinner } from 'reactstrap';
+import { useI18n } from '../../i18n';
 import ActionGrid from './components/grid';
 import AppModal from './components/modal';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -22,6 +23,7 @@ const initialFormState: FormState = {
 };
 
 function UsersPage() {
+  const { t } = useI18n();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { items, loading, error } = useAppSelector((state) => state.users);
@@ -34,7 +36,7 @@ function UsersPage() {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  const modalTitle = useMemo(() => (editingUser ? 'Update User' : 'Create User'), [editingUser]);
+  const modalTitle = useMemo(() => (editingUser ? t('users.update') : t('users.create')), [editingUser, t]);
 
   const openCreate = () => {
     setEditingUser(null);
@@ -90,11 +92,11 @@ function UsersPage() {
           <Card className="panel-card">
             <CardBody className="d-flex justify-content-between align-items-center">
               <div>
-                <h5 className="mb-1">Users Management</h5>
-                <div className="fs-12 text-muted">Create, update, delete and inspect user details.</div>
+                <h5 className="mb-1">{t('users.title')}</h5>
+                <div className="fs-12 text-muted">{t('users.subtitle')}</div>
               </div>
               <Button color="primary" onClick={openCreate}>
-                Create User
+                {t('users.create')}
               </Button>
             </CardBody>
           </Card>
@@ -128,17 +130,17 @@ function UsersPage() {
         footer={
           <>
             <Button color="secondary" onClick={() => setModalOpen(false)}>
-              Cancel
+              {t('app.cancel')}
             </Button>
             <Button color="primary" form="user-form" type="submit">
-              Save
+              {t('app.save')}
             </Button>
           </>
         }
       >
         <Form id="user-form" onSubmit={onSubmit}>
           <div className="mb-3">
-            <Label className="form-label fs-12">Keycloak ID</Label>
+            <Label className="form-label fs-12">{t('users.keycloak_id')}</Label>
             <Input
               value={form.keycloakId}
               onChange={(e) => setForm((prev) => ({ ...prev, keycloakId: e.target.value }))}
@@ -146,7 +148,7 @@ function UsersPage() {
             />
           </div>
           <div className="mb-3">
-            <Label className="form-label fs-12">Name</Label>
+            <Label className="form-label fs-12">{t('users.name')}</Label>
             <Input
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -154,7 +156,7 @@ function UsersPage() {
             />
           </div>
           <div>
-            <Label className="form-label fs-12">Email</Label>
+            <Label className="form-label fs-12">{t('users.email')}</Label>
             <Input
               type="email"
               value={form.email}

@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@devexpress/dx-react-grid": "^4.0.11",
+    "@devexpress/dx-react-grid-bootstrap4": "^4.0.11",
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.6",
     "bootstrap": "^5.3.8",

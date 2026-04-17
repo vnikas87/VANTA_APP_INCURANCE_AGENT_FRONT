@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
+import insuranceReducer from './slices/insuranceSlice';
 import licenseReducer from './slices/licenseSlice';
 import navigationReducer from './slices/navigationSlice';
 import usersReducer from './slices/usersSlice';
@@ -8,6 +9,7 @@ export const store = configureStore({
     users: usersReducer,
     navigation: navigationReducer,
     license: licenseReducer,
+    insurance: insuranceReducer,
   },
 });
 

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from 'reactstrap';
 import { logoutAllTabs } from '../../auth/keycloak';
+import { getStoredUserLang, useI18n } from '../../i18n';
 import type { User, UserNotification } from '../../types/user';
 
 type AppHeaderProps = {
@@ -21,6 +22,14 @@ function formatTime(value: string): string {
 function AppHeader({ username, currentUser, notifications, onToggleSidebar }: AppHeaderProps) {
   const [openNotif, setOpenNotif] = useState(false);
   const [openUser, setOpenUser] = useState(false);
+  const { language, setLanguage, t } = useI18n();
+
+  useEffect(() => {
+    const lang = getStoredUserLang(currentUser?.id);
+    if (lang && lang !== language) {
+      setLanguage(lang, currentUser?.id);
+    }
+  }, [currentUser?.id, language, setLanguage]);
 
   return (
     <header className="app-header d-flex align-items-center justify-content-between px-3 px-md-4 py-3">
@@ -29,12 +38,23 @@ function AppHeader({ username, currentUser, notifications, onToggleSidebar }: Ap
           <i className="ri-menu-2-line" />
         </Button>
         <div>
-          <div className="fw-bold">BlueGame Console</div>
-          <div className="text-muted fs-12">Role-driven control panel</div>
+          <div className="fw-bold">{t('app.title')}</div>
+          <div className="text-muted fs-12">{t('app.subtitle')}</div>
         </div>
       </div>
 
       <div className="d-flex align-items-center gap-2 gap-md-3 position-relative">
+        <div className="header-lang-wrap">
+          <select
+            className="form-select form-select-sm header-lang-select"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as 'en' | 'el', currentUser?.id)}
+            aria-label={t('app.language')}
+          >
+            <option value="en">EN</option>
+            <option value="el">EL</option>
+          </select>
+        </div>
         <div className="header-menu-wrap">
           <Button color="light" className="header-icon-btn" onClick={() => setOpenNotif((v) => !v)}>
             <i className="ri-notification-3-line" />
@@ -43,8 +63,8 @@ function AppHeader({ username, currentUser, notifications, onToggleSidebar }: Ap
 
           {openNotif ? (
             <div className="header-popover">
-              <div className="popover-title">Notifications</div>
-              {notifications.length === 0 ? <div className="popover-empty">No notifications</div> : null}
+              <div className="popover-title">{t('header.notifications')}</div>
+              {notifications.length === 0 ? <div className="popover-empty">{t('header.no_notifications')}</div> : null}
               {notifications.map((item) => (
                 <div className="popover-item" key={item.id}>
                   <div className="fw-semibold fs-12">{item.eventType}</div>
@@ -67,7 +87,7 @@ function AppHeader({ username, currentUser, notifications, onToggleSidebar }: Ap
             )}
             <div className="d-none d-md-block text-start">
               <div className="fw-semibold">{username}</div>
-              <div className="text-muted fs-12">{currentUser?.companyRole ?? 'User'}</div>
+              <div className="text-muted fs-12">{currentUser?.companyRole ?? t('app.user')}</div>
             </div>
             <i className="ri-arrow-down-s-line" />
           </button>
@@ -83,7 +103,7 @@ function AppHeader({ username, currentUser, notifications, onToggleSidebar }: Ap
                 <div className="text-muted fs-12">{currentUser?.signature ?? '-'}</div>
               </div>
               <button type="button" className="logout-btn" onClick={() => void logoutAllTabs()}>
-                <i className="ri-logout-box-r-line" /> Logout
+                <i className="ri-logout-box-r-line" /> {t('app.logout')}
               </button>
             </div>
           ) : null}

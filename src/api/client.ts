@@ -2,6 +2,7 @@ import axios from 'axios';
 import keycloak from '../auth/keycloak';
 import Swal from 'sweetalert2';
 import { logoutAllTabs } from '../auth/keycloak';
+import { tStatic } from '../i18n';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL ?? '/api';
 
@@ -38,8 +39,8 @@ api.interceptors.response.use(
       let timerInterval: ReturnType<typeof setInterval> | undefined;
       await Swal.fire({
         icon: 'error',
-        title: 'License Access Blocked',
-        html: `<div>${message ?? 'No valid license seat for this user.'}</div><div style="margin-top:8px;font-size:12px;opacity:0.9;">You will be signed out in <strong id="license-logout-seconds">30</strong>s</div>`,
+        title: tStatic('api.license_blocked'),
+        html: `<div>${message ?? tStatic('api.license_no_valid_seat')}</div><div style="margin-top:8px;font-size:12px;opacity:0.9;">${tStatic('api.logout_in')} <strong id="license-logout-seconds">30</strong>s</div><div style="margin-top:6px;font-size:12px;opacity:0.9;">${tStatic('api.click_ok_logout')}</div>`,
         background: '#07173f',
         color: '#e9eefc',
         backdrop: '#07173f',
@@ -47,7 +48,8 @@ api.interceptors.response.use(
           popup: 'license-block-popup',
           timerProgressBar: 'license-block-timer',
         },
-        showConfirmButton: false,
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
         timer: 30000,
         timerProgressBar: true,
         allowOutsideClick: false,

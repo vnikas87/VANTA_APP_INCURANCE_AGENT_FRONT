@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import type { ReactElement } from 'react';
 import { Navigate } from 'react-router-dom';
+import { tStatic } from '../i18n';
 import { useAppSelector } from '../store/hooks';
 
 type RequireNavPathProps = {
@@ -41,8 +42,8 @@ function RequireNavPath({ children, requiredPath }: RequireNavPathProps) {
     handledRef.current = true;
     void Swal.fire({
       icon: 'warning',
-      title: 'No Access',
-      text: 'You do not have permission for this page.',
+      title: tStatic('route.no_access'),
+      text: tStatic('route.no_permission'),
       timer: 2000,
       showConfirmButton: false,
     });

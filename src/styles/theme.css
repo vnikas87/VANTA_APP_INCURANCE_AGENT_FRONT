@@ -254,6 +254,17 @@ body {
   position: relative;
 }
 
+.header-lang-wrap {
+  min-width: 72px;
+}
+
+.header-lang-select {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  min-height: 36px;
+}
+
 .header-user-btn {
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -347,6 +358,15 @@ body {
 
 .panel-c {
   background: linear-gradient(130deg, #fff 0%, #dcfce7 100%);
+}
+
+.insurance-details-page .panel-card {
+  border-radius: 18px;
+}
+
+.production-hero-card {
+  background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 45%, #ffffff 100%);
+  border: 1px solid #d9e6ff;
 }
 
 .avatar-chip {

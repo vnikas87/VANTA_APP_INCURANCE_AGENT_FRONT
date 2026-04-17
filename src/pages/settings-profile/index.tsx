@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Button, Card, CardBody, Col, Form, Input, Label, Row } from 'reactstrap';
+import { useI18n } from '../../i18n';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchCurrentUser, updateMyProfile, uploadMyAvatar } from '../../store/slices/usersSlice';
 
@@ -14,6 +15,7 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 function SettingsPage() {
+  const { t } = useI18n();
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector((state) => state.users.currentUser);
 
@@ -78,9 +80,9 @@ function SettingsPage() {
                 <div className="profile-avatar profile-avatar-fallback">{(currentUser?.name ?? 'U').slice(0, 1).toUpperCase()}</div>
               )}
             </div>
-            <Label className="fs-12">Upload image</Label>
+            <Label className="fs-12">{t('profile.upload')}</Label>
             <Input type="file" accept="image/*" onChange={onAvatarChange} disabled={uploading} />
-            <div className="text-muted fs-12 mt-2">Max 5MB PNG/JPG/WEBP</div>
+            <div className="text-muted fs-12 mt-2">{t('profile.max_size')}</div>
           </CardBody>
         </Card>
       </Col>
@@ -88,31 +90,31 @@ function SettingsPage() {
       <Col lg="8">
         <Card className="panel-card">
           <CardBody>
-            <h5 className="mb-3">Personal Details</h5>
+            <h5 className="mb-3">{t('profile.title')}</h5>
             <Form>
               <Row className="g-3">
                 <Col md="6">
-                  <Label className="fs-12">Full name</Label>
+                  <Label className="fs-12">{t('profile.full_name')}</Label>
                   <Input value={name} onChange={(e) => setName(e.target.value)} />
                 </Col>
                 <Col md="6">
-                  <Label className="fs-12">Email</Label>
+                  <Label className="fs-12">{t('users.email')}</Label>
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </Col>
                 <Col md="6">
-                  <Label className="fs-12">Phone</Label>
+                  <Label className="fs-12">{t('profile.phone')}</Label>
                   <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+30 69..." />
                 </Col>
                 <Col md="6">
-                  <Label className="fs-12">Role in company</Label>
+                  <Label className="fs-12">{t('profile.role_company')}</Label>
                   <Input value={companyRole} onChange={(e) => setCompanyRole(e.target.value)} placeholder="Founder" />
                 </Col>
                 <Col md="6">
-                  <Label className="fs-12">Mobile phone</Label>
+                  <Label className="fs-12">{t('profile.mobile')}</Label>
                   <Input value={mobilePhone} onChange={(e) => setMobilePhone(e.target.value)} placeholder="+30 69..." />
                 </Col>
                 <Col md="12">
-                  <Label className="fs-12">Signature</Label>
+                  <Label className="fs-12">{t('profile.signature')}</Label>
                   <Input
                     type="textarea"
                     rows={4}
@@ -124,7 +126,7 @@ function SettingsPage() {
               </Row>
 
               <Button type="button" color="primary" className="mt-3" onClick={() => void onSave()}>
-                Update Profile
+                {t('profile.update')}
               </Button>
             </Form>
           </CardBody>

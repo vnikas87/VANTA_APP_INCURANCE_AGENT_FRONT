@@ -1,0 +1,57 @@
+import type { FilterDraft, FilterKey } from './types';
+
+export const DEFAULT_FILTERS: FilterDraft = {
+  query: '',
+  customerIds: [],
+  companyIds: [],
+  productionTypeIds: [],
+  insuranceYears: [],
+  applicationDateFrom: '',
+  applicationDateTo: '',
+  annualNetMin: '',
+  annualNetMax: '',
+  tableFilters: [],
+};
+
+export const DEFAULT_VISIBLE_FILTER_KEYS: FilterKey[] = [
+  'query',
+  'customerIds',
+  'companyIds',
+  'productionTypeIds',
+  'insuranceYears',
+  'applicationDateFrom',
+  'applicationDateTo',
+  'annualNetMin',
+  'annualNetMax',
+];
+
+export const DEFAULT_COLUMN_ORDER: string[] = [
+  'actions',
+  'id',
+  'customer',
+  'policyNumber',
+  'identifier',
+  'partner',
+  'company',
+  'branch',
+  'contractType',
+  'documentType',
+  'productionType',
+  'paymentFrequency',
+  'applicationDate',
+  'issueDate',
+  'deliveryDate',
+  'insuranceYear',
+  'installmentNumber',
+  'annualNetAmount',
+  'annualGrossAmount',
+  'installmentNetAmount',
+  'installmentGrossAmount',
+  'contractRate',
+  'contractCommission',
+  'incomingCommission',
+  'performanceRate',
+  'performanceAmount',
+  'differenceAmount',
+  'remarks',
+];
