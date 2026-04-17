@@ -27,6 +27,17 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function normalizeLicenseCode(input: string): string {
+  const trimmed = input.trim();
+  const unquoted =
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+      ? trimmed.slice(1, -1).trim()
+      : trimmed;
+
+  return unquoted.replace(/\s+/g, '');
+}
+
 export const fetchLicenseAdminData = createAsyncThunk('license/fetchAdmin', async () => {
   const response = await api.get<LicenseAdminResponse>('/license');
   return response.data;
@@ -35,7 +46,8 @@ export const fetchLicenseAdminData = createAsyncThunk('license/fetchAdmin', asyn
 export const activateLicenseByCode =
   (code: string) => async (dispatch: any): Promise<void> => {
     try {
-      await api.post('/license/activate', { code });
+      const normalizedCode = normalizeLicenseCode(code);
+      await api.post('/license/activate', { code: normalizedCode });
       toastSuccess('License activated');
       await dispatch(fetchLicenseAdminData());
     } catch (error) {
