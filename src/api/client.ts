@@ -14,6 +14,7 @@ export const api = axios.create({
 });
 
 let handlingLicenseLogout = false;
+let handlingPermissionLogout = false;
 
 api.interceptors.request.use((config) => {
   if (keycloak.token) {
@@ -70,6 +71,28 @@ api.interceptors.response.use(
       });
       await logoutAllTabs();
       handlingLicenseLogout = false;
+    }
+
+    if (
+      status === 403 &&
+      (code === 'PERMISSION_DENIED' || message === 'Forbidden') &&
+      !handlingPermissionLogout
+    ) {
+      handlingPermissionLogout = true;
+      await Swal.fire({
+        icon: 'error',
+        title: tStatic('api.permission_blocked'),
+        html: `<div>${tStatic('api.permission_denied')}</div><div style="margin-top:6px;font-size:12px;opacity:0.9;">${tStatic('api.click_ok_logout')}</div>`,
+        background: '#07173f',
+        color: '#e9eefc',
+        backdrop: '#07173f',
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      });
+      await logoutAllTabs();
+      handlingPermissionLogout = false;
     }
 
     return Promise.reject(error);
