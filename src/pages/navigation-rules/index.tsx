@@ -23,11 +23,9 @@ import {
   createNavigationFolder,
   createNavigationGroup,
   createNavigationRule,
-  createNavigationRole,
   createNavigationSubFolder,
   deleteNavigationFolder,
   deleteNavigationGroup,
-  deleteNavigationRole,
   deleteNavigationRule,
   deleteNavigationSubFolder,
   fetchNavigationAdminTree,
@@ -35,12 +33,13 @@ import {
   moveNavigationFolder,
   moveNavigationSubFolder,
   updateNavigationGroup,
-  updateNavigationRole,
   updateNavigationRule,
   updateNavigationSubFolder,
   updateNavigationFolder,
 } from '../../store/slices/navigationSlice';
 import type { NavigationFolder, NavigationGroup, NavigationRule } from '../../types/navigation';
+import { getUserRoles } from '../../auth/keycloak';
+import { toastError } from '../../utils/alerts';
 
 type EditModalState =
   | { open: false }
@@ -54,10 +53,29 @@ type MoveModalState =
   | { open: true; kind: 'folder'; id: number; targetGroupId: number; targetIndex: number }
   | { open: true; kind: 'subFolder'; id: number; targetFolderId: number; targetIndex: number };
 
+const KEYCLOAK_COMPATIBLE_ROLES = ['ADMINISTRATOR', 'OPS_USER'] as const;
+const ADMIN_ONLY_PATH_PREFIXES = ['/settings/access-control', '/management/users'];
+
+function isAdminOnlyPath(path: string): boolean {
+  return ADMIN_ONLY_PATH_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
 function NavigationRulesPage() {
   const dispatch = useAppDispatch();
   const adminTree = useAppSelector((state) => state.navigation.adminTree);
   const navRoles = useAppSelector((state) => state.navigation.navRoles);
+  const currentUser = useAppSelector((state) => state.users.currentUser);
+  const sessionRoles = useMemo(() => getUserRoles(), []);
+  const supportedRoleSet = useMemo(() => new Set(KEYCLOAK_COMPATIBLE_ROLES), []);
+  const availableRoleNames = useMemo(() => {
+    const normalized = navRoles.map((role) => role.name.toUpperCase().trim()).filter((name) => supportedRoleSet.has(name as (typeof KEYCLOAK_COMPATIBLE_ROLES)[number]));
+    const withDefaults = new Set<string>([...KEYCLOAK_COMPATIBLE_ROLES, ...normalized]);
+    return Array.from(withDefaults);
+  }, [navRoles, supportedRoleSet]);
+  const sessionSupportedRoles = useMemo(
+    () => sessionRoles.filter((role) => supportedRoleSet.has(role as (typeof KEYCLOAK_COMPATIBLE_ROLES)[number])),
+    [sessionRoles, supportedRoleSet]
+  );
 
   const [groupName, setGroupName] = useState('');
   const [folderName, setFolderName] = useState('');
@@ -67,8 +85,6 @@ function NavigationRulesPage() {
   const [roleName, setRoleName] = useState<string>('');
   const [selectedRoleNames, setSelectedRoleNames] = useState<string[]>([]);
   const [selectedRuleIds, setSelectedRuleIds] = useState<number[]>([]);
-  const [newNavRoleName, setNewNavRoleName] = useState('');
-  const [newNavRoleDescription, setNewNavRoleDescription] = useState('');
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [focusMode, setFocusMode] = useState(true);
   const [groupId, setGroupId] = useState<number | ''>('');
@@ -102,13 +118,13 @@ function NavigationRulesPage() {
   );
 
   useEffect(() => {
-    if (!roleName && navRoles[0]?.name) {
-      setRoleName(navRoles[0].name);
+    if (!roleName && availableRoleNames[0]) {
+      setRoleName(availableRoleNames[0]);
     }
-    if (selectedRoleNames.length === 0 && navRoles[0]?.name) {
-      setSelectedRoleNames([navRoles[0].name]);
+    if (selectedRoleNames.length === 0 && availableRoleNames[0]) {
+      setSelectedRoleNames([availableRoleNames[0]]);
     }
-  }, [roleName, navRoles]);
+  }, [roleName, selectedRoleNames.length, availableRoleNames]);
 
   useEffect(() => {
     setSelectedRuleIds((prev) => prev.filter((id) => adminTree.some((g) => g.folders.some((f) => f.subFolders.some((s) => s.rules.some((r) => r.id === id))))));
@@ -159,12 +175,21 @@ function NavigationRulesPage() {
   const submitRule = async (e: FormEvent) => {
     e.preventDefault();
     if (!ruleFolderId || !subFolderId) return;
+    if (!selectedRuleSubFolder) return;
 
-    if (selectedRoleNames.length > 0) {
+    const normalizedSelectedRoles = selectedRoleNames
+      .map((role) => role.toUpperCase().trim())
+      .filter((role) => availableRoleNames.includes(role));
+
+    if (normalizedSelectedRoles.length > 0) {
+      if (isAdminOnlyPath(selectedRuleSubFolder.path) && normalizedSelectedRoles.includes('OPS_USER')) {
+        toastError('OPS_USER cannot be assigned to admin-only paths (/settings/access-control*, /management/users*)');
+        return;
+      }
       await dispatch(
         bulkUpsertNavigationRules({
           subFolderId: Number(subFolderId),
-          roleNames: selectedRoleNames,
+          roleNames: normalizedSelectedRoles,
           canAccess,
         })
       );
@@ -173,10 +198,19 @@ function NavigationRulesPage() {
     }
 
     if (!roleName) return;
+    const normalizedRoleName = roleName.toUpperCase().trim();
+    if (!availableRoleNames.includes(normalizedRoleName)) {
+      toastError('Invalid role. Only ADMINISTRATOR and OPS_USER are supported.');
+      return;
+    }
+    if (isAdminOnlyPath(selectedRuleSubFolder.path) && normalizedRoleName === 'OPS_USER') {
+      toastError('OPS_USER cannot be assigned to admin-only paths (/settings/access-control*, /management/users*)');
+      return;
+    }
     await dispatch(
       createNavigationRule({
         subFolderId: Number(subFolderId),
-        roleName,
+        roleName: normalizedRoleName,
         canAccess,
       })
     );
@@ -220,7 +254,11 @@ function NavigationRulesPage() {
 
   const bulkRemoveSelectedRoles = async () => {
     if (!selectedRuleSubFolder) return;
-    const roleSet = new Set(selectedRoleNames.map((role) => role.trim().toUpperCase()).filter(Boolean));
+    const roleSet = new Set(
+      selectedRoleNames
+        .map((role) => role.trim().toUpperCase())
+        .filter((role) => role && availableRoleNames.includes(role))
+    );
     if (roleSet.size === 0) return;
     const ids = selectedRuleSubFolder.rules
       .filter((rule) => roleSet.has(rule.roleName.toUpperCase()))
@@ -241,19 +279,6 @@ function NavigationRulesPage() {
       }
     }
     setExpandedMap(next);
-  };
-
-  const submitNavRole = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!newNavRoleName.trim()) return;
-    await dispatch(
-      createNavigationRole({
-        name: newNavRoleName.trim().toUpperCase(),
-        description: newNavRoleDescription.trim() || undefined,
-      })
-    );
-    setNewNavRoleName('');
-    setNewNavRoleDescription('');
   };
 
   const moveGroupBy = async (groupIdValue: number, direction: -1 | 1) => {
@@ -336,9 +361,22 @@ function NavigationRulesPage() {
 
     if (!editModal.roleName.trim()) return;
     if (editModal.subFolderId > 0) {
+      const normalizedRoleName = editModal.roleName.trim().toUpperCase();
+      if (!availableRoleNames.includes(normalizedRoleName)) {
+        toastError('Invalid role. Only ADMINISTRATOR and OPS_USER are supported.');
+        return;
+      }
+      const relatedSubFolder = adminTree
+        .flatMap((group) => group.folders)
+        .flatMap((folder) => folder.subFolders)
+        .find((subFolder) => subFolder.id === editModal.subFolderId);
+      if (relatedSubFolder && isAdminOnlyPath(relatedSubFolder.path) && normalizedRoleName === 'OPS_USER') {
+        toastError('OPS_USER cannot be assigned to admin-only paths (/settings/access-control*, /management/users*)');
+        return;
+      }
       await dispatch(
         updateNavigationRule(editModal.id, {
-          roleName: editModal.roleName.trim().toUpperCase(),
+          roleName: normalizedRoleName,
           canAccess: editModal.canAccess,
         })
       );
@@ -346,11 +384,6 @@ function NavigationRulesPage() {
       return;
     }
 
-    await dispatch(
-      updateNavigationRole(editModal.id, {
-        name: editModal.roleName.trim().toUpperCase(),
-      })
-    );
     setEditModal({ open: false });
   };
 
@@ -544,8 +577,8 @@ function NavigationRulesPage() {
                 <option value="/">/</option>
                 <option value="/settings/access-control/users">/settings/access-control/users</option>
                 <option value="/settings/access-control/users/details">/settings/access-control/users/details</option>
-                <option value="/settings/access-control/navigation">/settings/access-control/navigation</option>
-                <option value="/settings/access-control/license">/settings/access-control/license</option>
+                <option value="/settings/access-control/navigation">/settings/access-control/navigation (ADMINISTRATOR only)</option>
+                <option value="/settings/access-control/license">/settings/access-control/license (ADMINISTRATOR only)</option>
                 <option value="__custom__">Custom...</option>
               </Input>
 
@@ -602,9 +635,9 @@ function NavigationRulesPage() {
               <Label className="fs-12">Access Rule</Label>
 
               <Input className="mt-2" type="select" value={roleName} onChange={(e) => setRoleName(e.target.value)}>
-                {navRoles.map((role) => (
-                  <option key={role.id} value={role.name}>
-                    {role.name}
+                {availableRoleNames.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
                   </option>
                 ))}
               </Input>
@@ -616,7 +649,7 @@ function NavigationRulesPage() {
                       type="button"
                       size="sm"
                       color="light"
-                      onClick={() => setSelectedRoleNames(navRoles.map((role) => role.name))}
+                      onClick={() => setSelectedRoleNames(availableRoleNames)}
                     >
                       All
                     </Button>
@@ -625,17 +658,17 @@ function NavigationRulesPage() {
                     </Button>
                   </div>
                 </div>
-                {navRoles.map((role) => (
-                  <div className="form-check" key={role.id}>
+                {availableRoleNames.map((role) => (
+                  <div className="form-check" key={role}>
                     <input
                       className="form-check-input"
                       type="checkbox"
-                      id={`bulk-role-${role.id}`}
-                      checked={selectedRoleNames.includes(role.name)}
-                      onChange={() => toggleRole(role.name)}
+                      id={`bulk-role-${role}`}
+                      checked={selectedRoleNames.includes(role)}
+                      onChange={() => toggleRole(role)}
                     />
-                    <label className="form-check-label fs-12" htmlFor={`bulk-role-${role.id}`}>
-                      {role.name}
+                    <label className="form-check-label fs-12" htmlFor={`bulk-role-${role}`}>
+                      {role}
                     </label>
                   </div>
                 ))}
@@ -721,49 +754,45 @@ function NavigationRulesPage() {
             </div>
 
             <hr />
-            <h6>Navigation Roles (DB)</h6>
-            <Form onSubmit={submitNavRole}>
-              <Input
-                value={newNavRoleName}
-                onChange={(e) => setNewNavRoleName(e.target.value)}
-                placeholder="Role name (example: CEO_MANAGEMENT)"
-              />
-              <Input
-                className="mt-2"
-                value={newNavRoleDescription}
-                onChange={(e) => setNewNavRoleDescription(e.target.value)}
-                placeholder="Description (optional)"
-              />
-              <Button className="mt-2" color="primary" type="submit" size="sm">
-                Add Nav Role
-              </Button>
-            </Form>
-
-            <div className="mt-2 d-flex flex-wrap gap-1">
-              {navRoles.map((role) => (
-                <Badge key={role.id} color={role.isSystem ? 'secondary' : 'dark'} className="role-badge">
-                  {role.name}
-                  <button
-                    type="button"
-                    className="badge-action"
-                    onClick={() =>
-                      setEditModal({
-                        open: true,
-                        kind: 'rule',
-                        id: role.id,
-                        subFolderId: 0,
-                        roleName: role.name,
-                        canAccess: true,
-                      })
-                    }
-                  >
-                    edit
-                  </button>
-                  <button type="button" className="badge-action" onClick={() => void dispatch(deleteNavigationRole(role.id))}>
-                    del
-                  </button>
+            <h6>Role Compatibility (Keycloak)</h6>
+            <div className="mb-2 fs-12 text-muted">
+              This page supports only <strong>ADMINISTRATOR</strong> and <strong>OPS_USER</strong>.
+            </div>
+            <div className="d-flex flex-wrap gap-1 mb-2">
+              {availableRoleNames.map((role) => (
+                <Badge key={role} color="secondary">
+                  {role}
                 </Badge>
               ))}
+            </div>
+            <div className="border rounded p-2">
+              <div className="fs-12 text-muted mb-1">Current session user</div>
+              <div className="fw-semibold">{currentUser?.name ?? 'Unknown user'}</div>
+              <div className="small text-muted">{currentUser?.email ?? '-'}</div>
+              <div className="mt-2 fs-12 text-muted">Current Keycloak roles</div>
+              <div className="d-flex flex-wrap gap-1 mt-1">
+                {sessionRoles.length > 0 ? (
+                  sessionRoles.map((role) => (
+                    <Badge key={role} color={supportedRoleSet.has(role as (typeof KEYCLOAK_COMPATIBLE_ROLES)[number]) ? 'success' : 'light'} className={supportedRoleSet.has(role as (typeof KEYCLOAK_COMPATIBLE_ROLES)[number]) ? '' : 'text-dark'}>
+                      {role}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge color="danger">No roles in token</Badge>
+                )}
+              </div>
+              <div className="mt-2 fs-12 text-muted">Effective app roles</div>
+              <div className="d-flex flex-wrap gap-1 mt-1">
+                {sessionSupportedRoles.length > 0 ? (
+                  sessionSupportedRoles.map((role) => (
+                    <Badge key={role} color="primary">
+                      {role}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge color="danger">None (user will not get menu access)</Badge>
+                )}
+              </div>
             </div>
 
           </CardBody>
@@ -1020,7 +1049,10 @@ function NavigationRulesPage() {
                                           selected
                                         </Badge>
                                       </div>
-                                      {subFolder.rules.map((rule: NavigationRule) => (
+                                      {subFolder.rules.map((rule: NavigationRule) => {
+                                        const invalidOpsOnAdminPath =
+                                          rule.roleName.toUpperCase() === 'OPS_USER' && isAdminOnlyPath(subFolder.path);
+                                        return (
                                         <div
                                           key={rule.id}
                                           className={`rule-chip rule-band ${rule.canAccess ? 'rule-band-allow' : 'rule-band-deny'}`}
@@ -1035,6 +1067,11 @@ function NavigationRulesPage() {
                                             <Badge color={rule.canAccess ? 'success' : 'danger'}>
                                               {rule.canAccess ? 'ALLOW' : 'DENY'}
                                             </Badge>
+                                            {invalidOpsOnAdminPath ? (
+                                              <Badge color="warning" className="text-dark">
+                                                Invalid for admin-only path
+                                              </Badge>
+                                            ) : null}
                                           </div>
                                           <div className="d-flex gap-1 rule-actions">
                                             <Button
@@ -1064,7 +1101,7 @@ function NavigationRulesPage() {
                                             </Button>
                                           </div>
                                         </div>
-                                      ))}
+                                      )})}
                                     </div>
                                   ) : null}
                                 </div>
@@ -1209,11 +1246,25 @@ function NavigationRulesPage() {
           {editModal.open && editModal.kind === 'rule' ? (
             <>
               <Label className="fs-12">Role</Label>
-              <Input
-                value={editModal.roleName}
-                onChange={(e) => setEditModal({ ...editModal, roleName: e.target.value.toUpperCase() })}
-                placeholder={editModal.subFolderId > 0 ? 'Role for access rule' : 'Navigation role name'}
-              />
+              {editModal.subFolderId > 0 ? (
+                <Input
+                  type="select"
+                  value={editModal.roleName.toUpperCase()}
+                  onChange={(e) => setEditModal({ ...editModal, roleName: e.target.value.toUpperCase() })}
+                >
+                  {availableRoleNames.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </Input>
+              ) : (
+                <Input
+                  value={editModal.roleName}
+                  onChange={(e) => setEditModal({ ...editModal, roleName: e.target.value.toUpperCase() })}
+                  placeholder="Navigation role name"
+                />
+              )}
               {editModal.subFolderId > 0 ? (
                 <div className="form-check mt-2">
                   <input
