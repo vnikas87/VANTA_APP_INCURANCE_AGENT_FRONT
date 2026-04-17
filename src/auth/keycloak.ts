@@ -66,6 +66,12 @@ export function getUserRoles(): string[] {
     }
   }
 
+  // Backward-compatible aliasing:
+  // If user has OPS nav-style roles, treat as OPS in frontend route guards.
+  if (roleSet.has('OPS_USER') || roleSet.has('OPS_MANAGEMENT')) {
+    roleSet.add('OPS');
+  }
+
   return Array.from(roleSet);
 }
 
